@@ -24,42 +24,42 @@ ENV NODE_ENV=production
 
 USER root
 
+ADD https://downloads.apache.org/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz \
+    https://github.com/Saxonica/Saxon-HE/releases/download/${SAXON_VERSION}/${SAXON_VERSION}J.zip \
+    https://www.oxygenxml.com/maven/com/oxygenxml/oxygen-patched-xerces/${XERCES_VERSION}/oxygen-patched-xerces-${XERCES_VERSION}.jar \
+    /tmp/
+
+COPY ["index.js", "package.json", "package-lock.json*", "/opt/docker-mei/"]
+
 # Configure the Eclipse Adoptium apt repository
-RUN apt-get update && \
-    apt-get install -y wget apt-transport-https && \
+RUN apt-get update && apt-get full-upgrade -y && \
+    apt-get install -y --no-install-recommends wget apt-transport-https curl ca-certificates && \
     mkdir -p /etc/apt/keyrings && \
     wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc && \
-    echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
-# install packages
-RUN apt-get update && apt-get install -y --no-install-recommends apt-utils python3-pip temurin-${JAVA_VERSION}-jdk curl unzip git libc6 aptitude libaom-dev gdebi fonts-stix && \
-    # install prince
-    curl --proto '=https' --tlsv1.2 -O https://www.princexml.com/download/${DEB_FILE} && \
-    gdebi --non-interactive ./${DEB_FILE} && \
+    echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list && \
     # install nodejs
     curl -fsSL https://deb.nodesource.com/setup_18.x -o nodesource_setup.sh && \
     bash nodesource_setup.sh && \
-    apt install nodejs && \
+    # install prince
+    curl --proto '=https' --tlsv1.2 -LO https://www.princexml.com/download/${DEB_FILE} && \
+    apt-get install -y --no-install-recommends apt-utils python3-pip temurin-${JAVA_VERSION}-jdk nodejs unzip git libc6 aptitude libaom-dev fonts-stix ./${DEB_FILE} && \
     # link ca-certificates
-    ln -sf /etc/ssl/certs/ca-certificates.crt /usr/lib/prince/etc/curl-ca-bundle.crt
-
-# setup ant
-ADD https://downloads.apache.org/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz /tmp/ant.tar.gz
-RUN tar -xvf /tmp/ant.tar.gz -C /opt
-
-# setup saxon
-ADD https://github.com/Saxonica/Saxon-HE/releases/download/${SAXON_VERSION}/${SAXON_VERSION}J.zip /tmp/saxon.zip
-RUN unzip /tmp/saxon.zip -d ${ANT_HOME}/lib
-
-# setup xerces
-ADD https://www.oxygenxml.com/maven/com/oxygenxml/oxygen-patched-xerces/${XERCES_VERSION}/oxygen-patched-xerces-${XERCES_VERSION}.jar ${ANT_HOME}/lib
-
-# cleanup
-RUN apt-get purge -y aptitude apt-utils gdebi curl unzip wget apt-transport-https && \
+    ln -sf /etc/ssl/certs/ca-certificates.crt /usr/lib/prince/etc/curl-ca-bundle.crt && \
+    # setup ant
+    tar -xvf /tmp/apache-ant-${ANT_VERSION}-bin.tar.gz -C /opt && \
+    # setup saxon
+    unzip /tmp/${SAXON_VERSION}J.zip -d ${ANT_HOME}/lib && \
+    # setup xerces
+    cp /tmp/oxygen-patched-xerces-${XERCES_VERSION}.jar ${ANT_HOME}/lib && \
+    # cleanup
+    apt-get purge -y aptitude apt-utils && \
     apt-get autoremove -y && apt-get clean && \
+    apt-get clean && \
     rm ${DEB_FILE} nodesource_setup.sh && \
-    rm -rf /tmp/*
+  	cd /opt/docker-mei && \
+  	# setup node app for rendering MEI files to SVG using Verovio Toolkit
+    npm install --omit=dev	&& \
+    # clean temporary folders
+    rm -rfv /tmp/* /root/.npm*
 
-# setup node app for rendering MEI files to SVG using Verovio Toolkit
 WORKDIR /opt/docker-mei
-COPY ["index.js", "package.json", "package-lock.json*", "./"]
-RUN npm install --production
