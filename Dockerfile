@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 LABEL org.opencontainers.image.authors="https://github.com/riedde"
 LABEL org.opencontainers.image.authors="https://github.com/bwbohl"
@@ -10,7 +10,7 @@ ARG JAVA_VERSION=17
 ARG PRINCE_VERSION=15.3
 ARG SAXON_VERSION=SaxonHE12-5
 ARG SCHEMATRON_VERSION=8.0.0
-ARG UBUNTU_VERSION=22.04
+ARG UBUNTU_VERSION=24.04
 ARG XERCES_VERSION=26.1.0.1
 
 ARG TARGETARCH
