@@ -72,7 +72,7 @@ This will open a shell prompt at the root folder of the container (`/opt/docker-
 cd music-encoding
 ```
 
-From here you can enter the corresponding commands, as found in the [build.xml](https://github.com/music-encoding/music-encoding/blob/develop/build.xml) file of the [music-encoding repository](https://github.com/music-encoding/music-encoding), on the command line.
+From here you can enter the corresponding commands, as found in the [build.xml](https://github.com/music-encoding/music-encoding/blob/develop/build.xml) file of the [music-encoding repository](https://github.com/music-encoding/music-encoding), on the command line. For an overview of all available build commands see [BUILD_COMMANDLINE.md](https://github.com/music-encoding/music-encoding/blob/develop/BUILD_COMMANDLINE.md#available-targets).
 
 For example:
 
