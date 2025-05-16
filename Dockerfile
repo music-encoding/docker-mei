@@ -3,15 +3,16 @@ FROM ubuntu:22.04
 LABEL org.opencontainers.image.authors="https://github.com/riedde"
 LABEL org.opencontainers.image.authors="https://github.com/bwbohl"
 LABEL org.opencontainers.image.authors="https://github.com/kepper"
+LABEL org.opencontainers.image.authors="https://github.com/rettinghaus"
 LABEL org.opencontainers.image.source="https://github.com/music-encoding/docker-mei"
 LABEL org.opencontainers.image.revision="v0.0.1"
 
 ARG JAVA_VERSION=17
 ARG PRINCE_VERSION=15.3
-ARG SAXON_VERSION=SaxonHE12-5
-ARG SCHEMATRON_VERSION=8.0.0
+ARG SAXON_VERSION=SaxonHE12-7
+ARG SCHEMATRON_VERSION=8.0.6
 ARG UBUNTU_VERSION=22.04
-ARG XERCES_VERSION=26.1.0.1
+ARG XERCES_VERSION=27.1.0.2
 
 ARG TARGETARCH
 ARG DEBIAN_FRONTEND=noninteractive
