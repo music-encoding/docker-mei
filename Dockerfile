@@ -29,7 +29,7 @@ RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker
 RUN echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker
 RUN DEBIAN_FRONTEND=noninteractive \
     # update and install common dependencies
-    apt-get update && apt-get full-upgrade -y && \
+    apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends apt-utils ca-certificates curl unzip && \
     # install prince runtime deps first
     apt-get install -y --no-install-recommends libc6 libaom-dev fonts-stix && \
