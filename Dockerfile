@@ -106,12 +106,9 @@ RUN DEBIAN_FRONTEND=noninteractive \
 ####################
 FROM base AS runtime
 
-LABEL org.opencontainers.image.authors="https://github.com/riedde" \
-      org.opencontainers.image.authors="https://github.com/bwbohl" \
-      org.opencontainers.image.authors="https://github.com/kepper" \
-      org.opencontainers.image.authors="https://github.com/musicEnfanthen" \
+LABEL org.opencontainers.image.authors="https://github.com/riedde, https://github.com/bwbohl, https://github.com/kepper, https://github.com/musicEnfanthen" \
       org.opencontainers.image.source="https://github.com/music-encoding/docker-mei" \
-      org.opencontainers.image.revision="v0.0.1"
+      org.opencontainers.image.revision="v0.0.2"
 
 ENV TZ=Europe/Berlin
 ENV ANT_HOME=/opt/apache-ant-${ANT_VERSION}
