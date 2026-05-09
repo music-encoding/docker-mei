@@ -10,16 +10,35 @@ FROM eclipse-temurin:${JAVA_VERSION} AS temurin
 #################
 FROM ubuntu:24.04 AS base
 
-ARG ANT_VERSION=1.10.17
-ARG NODE_VERSION=24
-ARG PRINCE_VERSION=15.4.1
-ARG SAXON_EDITION_VERSION=SaxonHE12-9
-ARG SCHEMATRON_VERSION=9.1.1
+ARG TARGETARCH=amd64
 ARG UBUNTU_VERSION=24.04
-ARG XERCES_VERSION=28.1.0.1
+ARG NODE_VERSION=24
 
-ARG TARGETARCH
+# Recompute the SHA-256 values when bumping versions in this stage.
+# Prefer publisher-provided checksum/signature files when available; use direct
+# `sha256sum` of the artifact only as a fallback when no official checksum exists.
+#   curl -fsSL "https://downloads.apache.org/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz" | sha256sum
+#   curl -fsSL "https://www.princexml.com/download/prince_${PRINCE_VERSION}-1_ubuntu${UBUNTU_VERSION}_amd64.deb" | sha256sum
+#   curl -fsSL "https://www.princexml.com/download/prince_${PRINCE_VERSION}-1_ubuntu${UBUNTU_VERSION}_arm64.deb" | sha256sum
+#   curl -fsSL "https://github.com/Saxonica/Saxon-HE/releases/download/${SAXON_EDITION_VERSION}/${SAXON_EDITION_VERSION}J.zip" | sha256sum
+#   curl -fsSL "https://repo1.maven.org/maven2/com/helger/schematron/ph-schematron-ant-task/${SCHEMATRON_VERSION}/ph-schematron-ant-task-${SCHEMATRON_VERSION}-jar-with-dependencies.jar" | sha256sum
+#   curl -fsSL "https://www.oxygenxml.com/maven/com/oxygenxml/oxygen-patched-xerces/${XERCES_VERSION}/oxygen-patched-xerces-${XERCES_VERSION}.jar" | sha256sum
+ARG ANT_VERSION=1.10.17
+ARG ANT_SHA256=9dc984c208585461e81ab34e9bbbfd9b25459956d7b105169ce9f148feded1e9
+
+ARG PRINCE_VERSION=15.4.1
+ARG PRINCE_AMD64_SHA256=4ba03194c1639a0956d5261289ef67a2936de2939bbb875877b8c2e64faad8ec
+ARG PRINCE_ARM64_SHA256=0a6691ba3f5fd7cc9d1de2d2dd09bed95a64f68f7328b909275bb45aba11ae8d
 ARG PRINCE_DEB_FILE=prince_${PRINCE_VERSION}-1_ubuntu${UBUNTU_VERSION}_${TARGETARCH}.deb
+
+ARG SAXON_EDITION_VERSION=SaxonHE12-9
+ARG SAXON_SHA256=f2895bef3794112c650a158be27c39a86e88c1717ebb8e0e88067d1f07635d12
+
+ARG SCHEMATRON_VERSION=9.1.1
+ARG SCHEMATRON_SHA256=41ef6634ac67dea1a072026720d3be62066508441c5260fe20aae97025592027
+
+ARG XERCES_VERSION=28.1.0.1
+ARG XERCES_SHA256=65cf8c7c41cce1410bfec7739ac4c65ffebb91bb70b1d24669f95833e125cad8
 
 ENV TZ=Europe/Berlin
 
@@ -34,7 +53,13 @@ RUN DEBIAN_FRONTEND=noninteractive \
     # install prince runtime deps first
     apt-get install -y --no-install-recommends libc6 libaom-dev fonts-stix && \
     # install prince local .deb using robust dependency repair flow
-    curl --proto '=https' --tlsv1.2 -fL -o ${PRINCE_DEB_FILE} https://www.princexml.com/download/${PRINCE_DEB_FILE} && \
+        curl --proto '=https' --tlsv1.2 -fL -o ${PRINCE_DEB_FILE} https://www.princexml.com/download/${PRINCE_DEB_FILE} && \
+        case "${TARGETARCH}" in \
+            amd64) PRINCE_SHA256="${PRINCE_AMD64_SHA256}" ;; \
+            arm64) PRINCE_SHA256="${PRINCE_ARM64_SHA256}" ;; \
+            *) echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
+        esac && \
+        echo "${PRINCE_SHA256}  ./${PRINCE_DEB_FILE}" | sha256sum -c - && \
     dpkg -i ./${PRINCE_DEB_FILE} || (apt-get update && apt-get install -y --no-install-recommends -f && dpkg -i ./${PRINCE_DEB_FILE}) && \
     rm -f ./${PRINCE_DEB_FILE} && \
     # link ca-certificates
@@ -64,12 +89,15 @@ ENV NODE_ENV=production
 COPY ["index.js", "package.json", "package-lock.json*", "/opt/docker-mei/"]
 
 RUN DEBIAN_FRONTEND=noninteractive \
-    # install nodejs
-    curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x -o nodesource_setup.sh && \
-    bash nodesource_setup.sh && \
+    # install nodejs from signed NodeSource apt repository
+    apt-get update && \
+    apt-get install -y --no-install-recommends gpg && \
+    install -d -m 0755 /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+    chmod 0644 /etc/apt/keyrings/nodesource.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_${NODE_VERSION}.x nodistro main" > /etc/apt/sources.list.d/nodesource.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends nodejs && \
-    rm -f nodesource_setup.sh && \
     # setup node app for rendering MEI files to SVG using Verovio Toolkit
     cd /opt/docker-mei && \
     npm install --omit=dev && \
@@ -84,11 +112,10 @@ FROM base AS ant-build
 ENV ANT_HOME=/opt/apache-ant-${ANT_VERSION}
 ENV PATH=${PATH}:${ANT_HOME}/bin
 
-ADD https://downloads.apache.org/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz \
-    https://github.com/Saxonica/Saxon-HE/releases/download/${SAXON_EDITION_VERSION}/${SAXON_EDITION_VERSION}J.zip \
-    https://www.oxygenxml.com/maven/com/oxygenxml/oxygen-patched-xerces/${XERCES_VERSION}/oxygen-patched-xerces-${XERCES_VERSION}.jar \
-    https://repo1.maven.org/maven2/com/helger/schematron/ph-schematron-ant-task/${SCHEMATRON_VERSION}/ph-schematron-ant-task-${SCHEMATRON_VERSION}-jar-with-dependencies.jar \
-    /tmp/
+ADD --checksum=sha256:${ANT_SHA256} https://downloads.apache.org/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz /tmp/
+ADD --checksum=sha256:${SAXON_SHA256} https://github.com/Saxonica/Saxon-HE/releases/download/${SAXON_EDITION_VERSION}/${SAXON_EDITION_VERSION}J.zip /tmp/
+ADD --checksum=sha256:${XERCES_SHA256} https://www.oxygenxml.com/maven/com/oxygenxml/oxygen-patched-xerces/${XERCES_VERSION}/oxygen-patched-xerces-${XERCES_VERSION}.jar /tmp/
+ADD --checksum=sha256:${SCHEMATRON_SHA256} https://repo1.maven.org/maven2/com/helger/schematron/ph-schematron-ant-task/${SCHEMATRON_VERSION}/ph-schematron-ant-task-${SCHEMATRON_VERSION}-jar-with-dependencies.jar /tmp/
 
 RUN DEBIAN_FRONTEND=noninteractive \
     # setup ant
