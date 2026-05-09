@@ -10,7 +10,7 @@ FROM eclipse-temurin:${JAVA_VERSION} AS temurin
 #################
 FROM ubuntu:24.04 AS base
 
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 ARG UBUNTU_VERSION=24.04
 ARG NODE_VERSION=24
 
@@ -26,10 +26,9 @@ ARG NODE_VERSION=24
 ARG ANT_VERSION=1.10.17
 ARG ANT_SHA256=9dc984c208585461e81ab34e9bbbfd9b25459956d7b105169ce9f148feded1e9
 
-ARG PRINCE_VERSION=15.4.1
-ARG PRINCE_AMD64_SHA256=4ba03194c1639a0956d5261289ef67a2936de2939bbb875877b8c2e64faad8ec
-ARG PRINCE_ARM64_SHA256=0a6691ba3f5fd7cc9d1de2d2dd09bed95a64f68f7328b909275bb45aba11ae8d
-ARG PRINCE_DEB_FILE=prince_${PRINCE_VERSION}-1_ubuntu${UBUNTU_VERSION}_${TARGETARCH}.deb
+ARG PRINCE_VERSION=16.2
+ARG PRINCE_AMD64_SHA256=305d755ff6437e855c151920d1363970d8cc7bff1ea4006290c36ad5d8e06c69
+ARG PRINCE_ARM64_SHA256=c8f411c0a06fef8522ae17cdcabfb1992379f017dcd213812154ca6e3cb762bc
 
 ARG SAXON_EDITION_VERSION=SaxonHE12-9
 ARG SAXON_SHA256=f2895bef3794112c650a158be27c39a86e88c1717ebb8e0e88067d1f07635d12
@@ -53,6 +52,8 @@ RUN DEBIAN_FRONTEND=noninteractive \
     # install prince runtime deps first
     apt-get install -y --no-install-recommends libc6 libaom-dev fonts-stix && \
     # install prince local .deb using robust dependency repair flow
+        TARGETARCH="${TARGETARCH:-amd64}" && \
+        PRINCE_DEB_FILE="prince_${PRINCE_VERSION}-1_ubuntu${UBUNTU_VERSION}_${TARGETARCH}.deb" && \
         curl --proto '=https' --tlsv1.2 -fL -o ${PRINCE_DEB_FILE} https://www.princexml.com/download/${PRINCE_DEB_FILE} && \
         case "${TARGETARCH}" in \
             amd64) PRINCE_SHA256="${PRINCE_AMD64_SHA256}" ;; \
@@ -60,7 +61,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
             *) echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
         esac && \
         echo "${PRINCE_SHA256}  ./${PRINCE_DEB_FILE}" | sha256sum -c - && \
-    dpkg -i ./${PRINCE_DEB_FILE} || (apt-get update && apt-get install -y --no-install-recommends -f && dpkg -i ./${PRINCE_DEB_FILE}) && \
+    dpkg -i ./${PRINCE_DEB_FILE} || (apt-get update && apt-get install -y --no-install-recommends -f) && \
     rm -f ./${PRINCE_DEB_FILE} && \
     # link ca-certificates
     ln -sf /etc/ssl/certs/ca-certificates.crt /usr/lib/prince/etc/curl-ca-bundle.crt && \
