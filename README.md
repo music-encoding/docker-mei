@@ -30,6 +30,18 @@ The following examples use different Docker commands. Detailed explanations of t
 | `docker buildx build` | Builds a Docker image from a Dockerfile. If not specified, the file is assumed to be in the current working directory. |
 | `-t` | Allows to specify some name and optional tag for the Docker image to be built, e.g., `docker-mei:local` |
 
+### Using `pwd` on Different Operating Systems
+
+The `` `pwd` `` ("print working directory") command is commonly used in Unix-like operating systems to get the current working directory. However, on other systems, especially Windows, you might need to replace it with a different command. Below are the alternatives for different command line tools:
+
+| Command Line Tool | Command |
+|-------------------|---------|
+| **Unix-like Systems** | |
+| - Terminal        | `` `pwd` `` |
+| **Windows Systems** | |
+| - Powershell        | `${PWD}` |
+| - CMD               | `%cd%`   |
+| - Git Bash for Windows | `/$(pwd)` |
 
 ### Pulling the Docker image
 
@@ -52,6 +64,9 @@ For example, if you start the Docker image from the root folder of your music-en
 docker run --rm -v `pwd`:/opt/docker-mei/music-encoding --name docker-mei ghcr.io/music-encoding/docker-mei:latest ant -noinput -buildfile music-encoding/build.xml -Ddocker=true
 ```
 
+> [!TIP] 
+> See [Using `pwd` on Different Operating Systems](#using-pwd-on-different-operating-systems) above for different alternatives for `` `pwd` `` when using non-Unix like operating systems.
+
 ### Running with an interactive shell
 
 If you need more fine-grained access and control, you can run the Docker container in an interactive shell by adding an `-it` flag.
@@ -66,13 +81,16 @@ For example, if you start the Docker image from the root folder of your music-en
 docker run --rm -it -v `pwd`:/opt/docker-mei/music-encoding --name docker-mei ghcr.io/music-encoding/docker-mei:latest
 ```
 
+> [!TIP] 
+> See [Using `pwd` on Different Operating Systems](#using-pwd-on-different-operating-systems) above for different alternatives for `` `pwd` `` when using non-Unix like operating systems.
+
 This will open a shell prompt at the root folder of the container (`/opt/docker-mei`). In order to proceed with building mei assets, you will need to navigate to the subfolder `music-encoding`.
 
 ```bash
 cd music-encoding
 ```
 
-From here you can enter the corresponding commands, as found in the [build.xml](https://github.com/music-encoding/music-encoding/blob/develop/build.xml) file of the [music-encoding repository](https://github.com/music-encoding/music-encoding), on the command line.
+From here you can enter the corresponding commands, as found in the [build.xml](https://github.com/music-encoding/music-encoding/blob/develop/build.xml) file of the [music-encoding repository](https://github.com/music-encoding/music-encoding), on the command line. For an overview of all available build commands see [BUILD_COMMANDLINE.md](https://github.com/music-encoding/music-encoding/blob/develop/BUILD_COMMANDLINE.md#available-targets).
 
 For example:
 
