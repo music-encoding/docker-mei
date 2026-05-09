@@ -104,7 +104,7 @@ LABEL org.opencontainers.image.authors="https://github.com/riedde" \
       org.opencontainers.image.revision="v0.0.1"
 
 ENV TZ=Europe/Berlin
-ENV ANT_HOME=/opt/apache-ant-1.10.14
+ENV ANT_HOME=/opt/apache-ant-${ANT_VERSION}
 ENV JAVA_HOME=/opt/java/openjdk
 
 # Java & Ant (including Saxon, Schematron and Xerces)
