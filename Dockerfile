@@ -31,11 +31,16 @@ RUN DEBIAN_FRONTEND=noninteractive \
     # update and install common dependencies
     apt-get update && apt-get full-upgrade -y && \
     apt-get install -y --no-install-recommends apt-utils ca-certificates curl unzip && \
-    # install prince
-    curl --proto '=https' --tlsv1.2 -LO https://www.princexml.com/download/${PRINCE_DEB_FILE} && \
-    apt-get install -y --no-install-recommends libc6 libaom-dev fonts-stix ./${PRINCE_DEB_FILE} && \
+    # install prince runtime deps first
+    apt-get install -y --no-install-recommends libc6 libaom-dev fonts-stix && \
+    # install prince local .deb using robust dependency repair flow
+    curl --proto '=https' --tlsv1.2 -fL -o ${PRINCE_DEB_FILE} https://www.princexml.com/download/${PRINCE_DEB_FILE} && \
+    dpkg -i ./${PRINCE_DEB_FILE} || (apt-get update && apt-get install -y --no-install-recommends -f && dpkg -i ./${PRINCE_DEB_FILE}) && \
+    rm -f ./${PRINCE_DEB_FILE} && \
     # link ca-certificates
-    ln -sf /etc/ssl/certs/ca-certificates.crt /usr/lib/prince/etc/curl-ca-bundle.crt
+    ln -sf /etc/ssl/certs/ca-certificates.crt /usr/lib/prince/etc/curl-ca-bundle.crt && \
+    # cleanup apt metadata to keep base/runtime layers smaller
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
 ################
@@ -44,7 +49,9 @@ RUN DEBIAN_FRONTEND=noninteractive \
 FROM base AS git-build
 
 RUN DEBIAN_FRONTEND=noninteractive \
-    apt-get install -y --no-install-recommends git
+    apt-get update && \
+    apt-get install -y --no-install-recommends git && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
 #################
@@ -60,10 +67,13 @@ RUN DEBIAN_FRONTEND=noninteractive \
     # install nodejs
     curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x -o nodesource_setup.sh && \
     bash nodesource_setup.sh && \
+    apt-get update && \
     apt-get install -y --no-install-recommends nodejs && \
+    rm -f nodesource_setup.sh && \
     # setup node app for rendering MEI files to SVG using Verovio Toolkit
     cd /opt/docker-mei && \
-    npm install --omit=dev
+    npm install --omit=dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
 ################
