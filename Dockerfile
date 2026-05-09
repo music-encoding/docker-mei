@@ -8,7 +8,7 @@ FROM eclipse-temurin:${JAVA_VERSION} AS temurin
 #################
 # Stage 1: BASE #
 #################
-FROM ubuntu:24.10 AS base
+FROM ubuntu:24.04 AS base
 
 ARG ANT_VERSION=1.10.17
 ARG NODE_VERSION=24
