@@ -49,28 +49,38 @@ RUN DEBIAN_FRONTEND=noninteractive \
     # update and install common dependencies
     apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends apt-utils ca-certificates curl unzip && \
-    # install prince runtime deps first
-    apt-get install -y --no-install-recommends libc6 libaom-dev fonts-stix && \
-    # install prince local .deb using robust dependency repair flow
-        TARGETARCH="${TARGETARCH:-amd64}" && \
-        PRINCE_DEB_FILE="prince_${PRINCE_VERSION}-1_ubuntu${UBUNTU_VERSION}_${TARGETARCH}.deb" && \
-        curl --proto '=https' --tlsv1.2 -fL -o ${PRINCE_DEB_FILE} https://www.princexml.com/download/${PRINCE_DEB_FILE} && \
-        case "${TARGETARCH}" in \
-            amd64) PRINCE_SHA256="${PRINCE_AMD64_SHA256}" ;; \
-            arm64) PRINCE_SHA256="${PRINCE_ARM64_SHA256}" ;; \
-            *) echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
-        esac && \
-        echo "${PRINCE_SHA256}  ./${PRINCE_DEB_FILE}" | sha256sum -c - && \
-    dpkg -i ./${PRINCE_DEB_FILE} || (apt-get update && apt-get install -y --no-install-recommends -f) && \
-    rm -f ./${PRINCE_DEB_FILE} && \
-    # link ca-certificates
-    ln -sf /etc/ssl/certs/ca-certificates.crt /usr/lib/prince/etc/curl-ca-bundle.crt && \
     # cleanup apt metadata to keep base/runtime layers smaller
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
 ################
-# Stage 2: GIT #
+# Stage 2: PRINCE #
+###################
+FROM base AS prince-build
+
+RUN DEBIAN_FRONTEND=noninteractive \
+    # install prince runtime deps first
+    apt-get update && \
+    apt-get install -y --no-install-recommends libc6 libaom3 fonts-stix && \
+    # install prince local .deb using robust dependency repair flow
+    TARGETARCH="${TARGETARCH:-amd64}" && \
+    PRINCE_DEB_FILE="prince_${PRINCE_VERSION}-1_ubuntu${UBUNTU_VERSION}_${TARGETARCH}.deb" && \
+    curl --proto '=https' --tlsv1.2 -fL -o ${PRINCE_DEB_FILE} https://www.princexml.com/download/${PRINCE_DEB_FILE} && \
+    case "${TARGETARCH}" in \
+        amd64) PRINCE_SHA256="${PRINCE_AMD64_SHA256}" ;; \
+        arm64) PRINCE_SHA256="${PRINCE_ARM64_SHA256}" ;; \
+        *) echo "Unsupported TARGETARCH: ${TARGETARCH}" >&2; exit 1 ;; \
+    esac && \
+    echo "${PRINCE_SHA256}  ./${PRINCE_DEB_FILE}" | sha256sum -c - && \
+    dpkg -i ./${PRINCE_DEB_FILE} || (apt-get update && apt-get install -y --no-install-recommends -f) && \
+    rm -f ./${PRINCE_DEB_FILE} && \
+    # link ca-certificates
+    ln -sf /etc/ssl/certs/ca-certificates.crt /usr/lib/prince/etc/curl-ca-bundle.crt && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+
+################
+# Stage 3: GIT #
 ################
 FROM base AS git-build
 
@@ -81,7 +91,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
 
 
 #################
-# Stage 3: NODE #
+# Stage 4: NODE #
 #################
 FROM base AS node-build
 
@@ -106,7 +116,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
 
 
 ################
-# Stage 4: ANT #
+# Stage 5: ANT #
 ################
 FROM base AS ant-build
 
@@ -142,9 +152,32 @@ ENV TZ=Europe/Berlin
 ENV ANT_HOME=/opt/apache-ant-${ANT_VERSION}
 ENV JAVA_HOME=/opt/java/openjdk
 
+RUN DEBIAN_FRONTEND=noninteractive \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        fonts-stix \
+        libc6 \
+        libaom3 \
+        libavif16 \
+        libfontconfig1 \
+        libfreetype6 \
+        libgif7 \
+        libjpeg8 \
+        liblcms2-2 \
+        libpng16-16t64 \
+        libtiff6 \
+        libwebp7 \
+        libwebpdemux2 \
+        libxml2 && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Java & Ant (including Saxon, Schematron and Xerces)
 COPY --from=temurin $JAVA_HOME $JAVA_HOME
 COPY --from=ant-build $ANT_HOME $ANT_HOME
+# Prince
+COPY --from=prince-build /usr/bin/prince /usr/bin/prince
+COPY --from=prince-build /usr/lib/prince /usr/lib/prince
 # Git
 COPY --from=git-build /usr/bin/git /usr/bin/git
 COPY --from=git-build /usr/lib/git-core /usr/lib/git-core
@@ -155,6 +188,8 @@ COPY --from=node-build /usr/lib/node_modules /usr/lib/node_modules
 
 # Main directory
 COPY --from=node-build /opt/docker-mei /opt/docker-mei
+
+RUN ln -sf /etc/ssl/certs/ca-certificates.crt /usr/lib/prince/etc/curl-ca-bundle.crt
 
 # Set path
 ENV PATH=${PATH}:${ANT_HOME}/bin:${JAVA_HOME}/bin:/usr/local/bin
