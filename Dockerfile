@@ -47,7 +47,7 @@ RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker && \
     echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker && \
     export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
-    apt-get install -y --no-install-recommends apt-utils ca-certificates curl fonts-stix libc6 libaom3 unzip && \
+    apt-get install -y --no-install-recommends apt-utils ca-certificates fonts-stix libaom3 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
@@ -57,6 +57,9 @@ RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker && \
 FROM base AS prince-build
 
 RUN DEBIAN_FRONTEND=noninteractive \
+    apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
     # download and install prince .deb
     TARGETARCH="${TARGETARCH:-amd64}" && \
     PRINCE_DEB_FILE="prince_${PRINCE_VERSION}-1_ubuntu${UBUNTU_VERSION}_${TARGETARCH}.deb" && \
@@ -86,7 +89,7 @@ COPY ["package.json", "package-lock.json*", "/opt/docker-mei/"]
 RUN DEBIAN_FRONTEND=noninteractive \
     # install nodejs from signed NodeSource apt repository
     apt-get update && \
-    apt-get install -y --no-install-recommends gpg && \
+    apt-get install -y --no-install-recommends curl gpg && \
     install -d -m 0755 /etc/apt/keyrings && \
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
     chmod 0644 /etc/apt/keyrings/nodesource.gpg && \
@@ -115,6 +118,9 @@ ADD --checksum=sha256:${XERCES_SHA256} https://www.oxygenxml.com/maven/com/oxyge
 ADD --checksum=sha256:${SCHEMATRON_SHA256} https://repo1.maven.org/maven2/com/helger/schematron/ph-schematron-ant-task/${SCHEMATRON_VERSION}/ph-schematron-ant-task-${SCHEMATRON_VERSION}-jar-with-dependencies.jar /tmp/
 
 RUN DEBIAN_FRONTEND=noninteractive \
+    apt-get update && \
+    apt-get install -y --no-install-recommends unzip && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
     # setup ant
     tar -xvf /tmp/apache-ant-${ANT_VERSION}-bin.tar.gz -C /opt && \
     # setup saxon
@@ -144,6 +150,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends \
         git \
         libavif16 \
+        libcurl4t64 \
         libfontconfig1 \
         libfreetype6 \
         libgif7 \
