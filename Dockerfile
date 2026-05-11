@@ -1,18 +1,8 @@
 # Global args
-ARG JAVA_VERSION=17
-
-# Alias for Eclipse Temurin Java image
-FROM eclipse-temurin:${JAVA_VERSION} AS temurin
-
-
-#################
-# Stage 1: BASE #
-#################
-FROM ubuntu:24.04 AS base
-
 ARG TARGETARCH
-ARG UBUNTU_VERSION=24.04
+ARG JAVA_VERSION=17
 ARG NODE_VERSION=24
+ARG UBUNTU_VERSION=24.04
 
 # Recompute the SHA-256 values when bumping versions in this stage.
 # Prefer publisher-provided checksum/signature files when available; use direct
@@ -39,6 +29,15 @@ ARG SCHEMATRON_SHA256=41ef6634ac67dea1a072026720d3be62066508441c5260fe20aae97025
 ARG XERCES_VERSION=28.1.0.1
 ARG XERCES_SHA256=65cf8c7c41cce1410bfec7739ac4c65ffebb91bb70b1d24669f95833e125cad8
 
+# Alias for Eclipse Temurin Java image
+FROM eclipse-temurin:${JAVA_VERSION} AS temurin
+
+
+#################
+# Stage 1: BASE #
+#################
+FROM ubuntu:24.04 AS base
+
 ENV TZ=Europe/Berlin
 
 USER root
@@ -55,6 +54,12 @@ RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker && \
 # Stage 2: PRINCE #
 ###################
 FROM base AS prince-build
+
+ARG TARGETARCH
+ARG UBUNTU_VERSION
+ARG PRINCE_VERSION
+ARG PRINCE_AMD64_SHA256
+ARG PRINCE_ARM64_SHA256
 
 RUN DEBIAN_FRONTEND=noninteractive \
     apt-get update && \
@@ -81,6 +86,8 @@ RUN DEBIAN_FRONTEND=noninteractive \
 # Stage 3: NODE #
 #################
 FROM base AS node-build
+
+ARG NODE_VERSION
 
 ENV NODE_ENV=production
 
@@ -109,6 +116,15 @@ COPY ["index.js", "/opt/docker-mei/"]
 ################
 FROM base AS ant-build
 
+ARG ANT_VERSION
+ARG ANT_SHA256
+ARG SAXON_EDITION_VERSION
+ARG SAXON_SHA256
+ARG XERCES_VERSION
+ARG XERCES_SHA256
+ARG SCHEMATRON_VERSION
+ARG SCHEMATRON_SHA256
+
 ENV ANT_HOME=/opt/apache-ant-${ANT_VERSION}
 ENV PATH=${PATH}:${ANT_HOME}/bin
 
@@ -136,6 +152,8 @@ RUN DEBIAN_FRONTEND=noninteractive \
 # Stage 5: Runtime #
 ####################
 FROM base AS runtime
+
+ARG ANT_VERSION
 
 LABEL org.opencontainers.image.authors="https://github.com/riedde, https://github.com/bwbohl, https://github.com/kepper, https://github.com/musicEnfanthen" \
       org.opencontainers.image.source="https://github.com/music-encoding/docker-mei" \
