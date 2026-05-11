@@ -4,7 +4,7 @@ ARG UBUNTU_VERSION=24.04
 ARG JAVA_VERSION=17
 ARG NODE_VERSION=24
 
-# Recompute the SHA-256 values when bumping versions in this stage.
+# Recompute the SHA-256 values when bumping the following versions.
 # Prefer publisher-provided checksum/signature files when available; use direct
 # `sha256sum` of the artifact only as a fallback when no official checksum exists.
 #   curl -fsSL "https://downloads.apache.org/ant/binaries/apache-ant-${ANT_VERSION}-bin.tar.gz" | sha256sum
