@@ -79,19 +79,8 @@ RUN DEBIAN_FRONTEND=noninteractive \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
-################
-# Stage 3: GIT #
-################
-FROM base AS git-build
-
-RUN DEBIAN_FRONTEND=noninteractive \
-    apt-get update && \
-    apt-get install -y --no-install-recommends git && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
-
 #################
-# Stage 4: NODE #
+# Stage 3: NODE #
 #################
 FROM base AS node-build
 
@@ -116,7 +105,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
 
 
 ################
-# Stage 5: ANT #
+# Stage 4: ANT #
 ################
 FROM base AS ant-build
 
@@ -140,7 +129,7 @@ RUN DEBIAN_FRONTEND=noninteractive \
 
 
 ####################
-# Stage 6: Runtime #
+# Stage 5: Runtime #
 ####################
 FROM base AS runtime
 
@@ -152,11 +141,13 @@ ENV TZ=Europe/Berlin
 ENV ANT_HOME=/opt/apache-ant-${ANT_VERSION}
 ENV JAVA_HOME=/opt/java/openjdk
 
+# Install runtime dependencies for Prince and Git directly.
 RUN DEBIAN_FRONTEND=noninteractive \
     apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         fonts-stix \
+        git \
         libc6 \
         libaom3 \
         libavif16 \
@@ -178,10 +169,6 @@ COPY --from=ant-build $ANT_HOME $ANT_HOME
 # Prince
 COPY --from=prince-build /usr/bin/prince /usr/bin/prince
 COPY --from=prince-build /usr/lib/prince /usr/lib/prince
-# Git
-COPY --from=git-build /usr/bin/git /usr/bin/git
-COPY --from=git-build /usr/lib/git-core /usr/lib/git-core
-COPY --from=git-build /usr/share/git-core /usr/share/git-core
 # Node
 COPY --from=node-build /usr/bin/node /usr/bin/node
 COPY --from=node-build /usr/lib/node_modules /usr/lib/node_modules
