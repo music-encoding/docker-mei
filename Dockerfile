@@ -122,13 +122,14 @@ RUN DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends unzip && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
     # setup ant
-    tar -xvf /tmp/apache-ant-${ANT_VERSION}-bin.tar.gz -C /opt && \
+    tar -xf /tmp/apache-ant-${ANT_VERSION}-bin.tar.gz -C /opt && \
     # setup saxon
-    unzip /tmp/${SAXON_EDITION_VERSION}J.zip -d ${ANT_HOME}/lib && \
+    unzip -j /tmp/${SAXON_EDITION_VERSION}J.zip "*.jar" -d ${ANT_HOME}/lib && \
     # setup xerces
     cp /tmp/oxygen-patched-xerces-${XERCES_VERSION}.jar ${ANT_HOME}/lib && \
     # setup schematron
-    cp /tmp/ph-schematron-ant-task-${SCHEMATRON_VERSION}-jar-with-dependencies.jar ${ANT_HOME}/lib
+    cp /tmp/ph-schematron-ant-task-${SCHEMATRON_VERSION}-jar-with-dependencies.jar ${ANT_HOME}/lib && \
+    rm -rf /tmp/*
 
 
 ####################
