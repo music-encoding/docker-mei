@@ -46,8 +46,8 @@ USER root
 RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker && \
     echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker && \
     export DEBIAN_FRONTEND=noninteractive && \
-    apt-get update && apt-get upgrade -y && \
-    apt-get install -y --no-install-recommends apt-utils ca-certificates curl unzip && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends apt-utils ca-certificates curl fonts-stix libc6 libaom3 unzip && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
@@ -57,10 +57,7 @@ RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker && \
 FROM base AS prince-build
 
 RUN DEBIAN_FRONTEND=noninteractive \
-    # install prince runtime deps first
-    apt-get update && \
-    apt-get install -y --no-install-recommends libc6 libaom3 fonts-stix && \
-    # install prince local .deb using robust dependency repair flow
+    # download and install prince .deb
     TARGETARCH="${TARGETARCH:-amd64}" && \
     PRINCE_DEB_FILE="prince_${PRINCE_VERSION}-1_ubuntu${UBUNTU_VERSION}_${TARGETARCH}.deb" && \
     curl --proto '=https' --tlsv1.2 -fL -o ${PRINCE_DEB_FILE} https://www.princexml.com/download/${PRINCE_DEB_FILE} && \
@@ -145,11 +142,7 @@ ENV JAVA_HOME=/opt/java/openjdk
 RUN DEBIAN_FRONTEND=noninteractive \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        ca-certificates \
-        fonts-stix \
         git \
-        libc6 \
-        libaom3 \
         libavif16 \
         libfontconfig1 \
         libfreetype6 \
