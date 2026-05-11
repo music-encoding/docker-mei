@@ -1,8 +1,8 @@
 # Global args
 ARG TARGETARCH
+ARG UBUNTU_VERSION=24.04
 ARG JAVA_VERSION=17
 ARG NODE_VERSION=24
-ARG UBUNTU_VERSION=24.04
 
 # Recompute the SHA-256 values when bumping versions in this stage.
 # Prefer publisher-provided checksum/signature files when available; use direct
@@ -36,7 +36,7 @@ FROM eclipse-temurin:${JAVA_VERSION} AS temurin
 #################
 # Stage 1: BASE #
 #################
-FROM ubuntu:24.04 AS base
+FROM ubuntu:${UBUNTU_VERSION} AS base
 
 ENV TZ=Europe/Berlin
 
