@@ -43,13 +43,11 @@ ENV TZ=Europe/Berlin
 
 USER root
 
-RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker
-RUN echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker
-RUN DEBIAN_FRONTEND=noninteractive \
-    # update and install common dependencies
+RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker && \
+    echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker && \
+    export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && apt-get upgrade -y && \
     apt-get install -y --no-install-recommends apt-utils ca-certificates curl unzip && \
-    # cleanup apt metadata to keep base/runtime layers smaller
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
