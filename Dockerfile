@@ -86,7 +86,7 @@ FROM base AS node-build
 
 ENV NODE_ENV=production
 
-COPY ["index.js", "package.json", "package-lock.json*", "/opt/docker-mei/"]
+COPY ["package.json", "package-lock.json*", "/opt/docker-mei/"]
 
 RUN DEBIAN_FRONTEND=noninteractive \
     # install nodejs from signed NodeSource apt repository
@@ -100,8 +100,10 @@ RUN DEBIAN_FRONTEND=noninteractive \
     apt-get install -y --no-install-recommends nodejs && \
     # setup node app for rendering MEI files to SVG using Verovio Toolkit
     cd /opt/docker-mei && \
-    npm install --omit=dev && \
+    npm ci --omit=dev && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+COPY ["index.js", "/opt/docker-mei/"]
 
 
 ################
