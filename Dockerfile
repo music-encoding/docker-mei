@@ -46,7 +46,7 @@ RUN echo 'APT::Install-Suggests "0";' >> /etc/apt/apt.conf.d/00-docker && \
     echo 'APT::Install-Recommends "0";' >> /etc/apt/apt.conf.d/00-docker && \
     export DEBIAN_FRONTEND=noninteractive && \
     apt-get update && \
-    apt-get install -y --no-install-recommends apt-utils ca-certificates fonts-stix libaom3 && \
+    apt-get install -y --no-install-recommends ca-certificates fonts-stix libaom3 && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 
@@ -190,7 +190,6 @@ COPY --from=prince-build /usr/bin/prince /usr/bin/prince
 COPY --from=prince-build /usr/lib/prince /usr/lib/prince
 # Node
 COPY --from=node-build /usr/bin/node /usr/bin/node
-COPY --from=node-build /usr/lib/node_modules /usr/lib/node_modules
 
 # Main directory
 COPY --from=node-build /opt/docker-mei /opt/docker-mei
