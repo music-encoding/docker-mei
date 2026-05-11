@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 LABEL org.opencontainers.image.authors="https://github.com/riedde"
 LABEL org.opencontainers.image.authors="https://github.com/bwbohl"
